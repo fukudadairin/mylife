@@ -1,0 +1,20 @@
+{
+    "trainings": [
+        {
+            "day": 1,
+            "training": "懸垂"
+        },
+        {
+            "day": 2,
+            "training": "腕立て"
+        },
+        {
+            "day": 3,
+            "training": "腹筋ローラー"
+        },
+        {
+            "day": 4,
+            "training": "休憩"
+        }
+    ]
+}
