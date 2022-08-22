@@ -6,7 +6,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-
+    <!-- reset CSS -->
     <link rel="stylesheet" href="./css/reset.css">
 
     <!-- Bootstrap CSS -->
@@ -110,7 +110,7 @@
 
     <div class="flex">
         <div class="p30 w50">
-            <div class="t_content_title">クレジット</div>
+            <div class="t_content_title">クレジット：104400円</div>
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -124,86 +124,86 @@
                 </thead>
                 <tbody>
                     <tr>
+                        <td>1</td>
                         <td>3,000</td>
                         <td>3,000</td>
                         <td>3,000</td>
                         <td>3,000</td>
-                        <td>3,000</td>
-                        <td>3,000</td>
+                        <td>テキストが入るテキストが入るテキストが入る</td>
                     </tr>
                     <tr>
-                        <td>1,000</td>
+                        <td>2</td>
                         <td>4,000</td>
                         <td>6,000</td>
                         <td>1,000</td>
                         <td>4,000</td>
-                        <td>6,000</td>
+                        <td>テキストが入るテキストが入るテキストが入る</td>
                     </tr>
                     <tr>
-                        <td>3,000</td>
+                        <td>3</td>
                         <td>4,000</td>
                         <td>3,000</td>
                         <td>4,000</td>
                         <td>3,000</td>
-                        <td>4,000</td>
+                        <td>テキストが入るテキストが入るテキストが入る</td>
                     </tr>
                     <tr>
-                        <td>−30,4％</td>
+                        <td>4</td>
                         <td>−10,4％</td>
                         <td>−30,4％</td>
                         <td>−10,4％</td>
                         <td>−30,4％</td>
-                        <td>−10,4％</td>
+                        <td>テキストが入るテキストが入るテキストが入る</td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
         <div class="p30 w50">
-            <!-- <div class="credit">クレジット</div> -->
+            <div class="t_content_title">現金：104400円</div>
             <table class="table table-bordered">
-                <thead>
+            <thead>
                     <tr>
-                        <th scope="col">総合計</th>
-                        <th scope="col">変動費</th>
-                        <th scope="col">固定費</th>
-                        <th scope="col">食費</th>
-                        <th scope="col">旅費交通費</th>
-                        <th scope="col">水道ガスなど</th>
+                        <th scope="col">ID</th>
+                        <th scope="col">出費項目</th>
+                        <th scope="col">日付</th>
+                        <th scope="col">詳細</th>
+                        <th scope="col">金額</th>
+                        <th scope="col">メモ</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
+                        <td>1</td>
                         <td>3,000</td>
                         <td>3,000</td>
                         <td>3,000</td>
                         <td>3,000</td>
-                        <td>3,000</td>
-                        <td>3,000</td>
+                        <td>テキストが入るテキストが入るテキストが入る</td>
                     </tr>
                     <tr>
-                        <td>1,000</td>
+                        <td>2</td>
                         <td>4,000</td>
                         <td>6,000</td>
                         <td>1,000</td>
                         <td>4,000</td>
-                        <td>6,000</td>
+                        <td>テキストが入るテキストが入るテキストが入る</td>
                     </tr>
                     <tr>
-                        <td>3,000</td>
+                        <td>3</td>
                         <td>4,000</td>
                         <td>3,000</td>
                         <td>4,000</td>
                         <td>3,000</td>
-                        <td>4,000</td>
+                        <td>テキストが入るテキストが入るテキストが入る</td>
                     </tr>
                     <tr>
-                        <td>−30,4％</td>
+                        <td>4</td>
                         <td>−10,4％</td>
                         <td>−30,4％</td>
                         <td>−10,4％</td>
                         <td>−30,4％</td>
-                        <td>−10,4％</td>
+                        <td>テキストが入るテキストが入るテキストが入る</td>
                     </tr>
                 </tbody>
             </table>
