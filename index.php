@@ -1,3 +1,21 @@
+<?php
+echo "<pre>";
+require_once(dirname(__FILE__) . "/config/config.php");
+require_once(dirname(__FILE__) . "/function.php");
+
+$pdo  = connect_db();
+$sql = "SELECT id,budget_Amount FROM budget WHERE budget_item =:budget_item";
+$stmt = $pdo->prepare($sql); //どれを使うのかを決める→SELECT文：INSERT文：UPDATE文：DELETE文：
+$stmt->bindValue(":budget_item", "接待交際費", PDO::PARAM_STR);
+$stmt->execute();
+$budget_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
+
+var_dump($budget_list);
+
+echo "</pre>";
+?>
+
+
 <!doctype html>
 <html lang="ja">
 
@@ -14,9 +32,6 @@
 
     <!-- original CSS -->
     <link rel="stylesheet" href="./css/style.css">
-
-
-
 
     <title>my money</title>
 </head>
