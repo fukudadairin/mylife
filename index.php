@@ -6,9 +6,36 @@ require_once(dirname(__FILE__) . "/function.php");
 $pdo  = connect_db();
 
 
-// 変動費の合計
-$sql = "SELECT sum(budget_Amount) FROM budget";
+// 年月セレクトで選択された月を取得、選択されていない状態だと当年当月が選択される
+if (isset($_GET["y"])) {
+    $target_yyyy = $_GET["y"];
+}else{
+    $target_yyyy = date("Y");
+}
+
+if (isset($_GET["m"])) {
+    $target_mm = $_GET["m"];
+} else {
+    $target_mm = date('m');
+}
+$target_yyyymm = $target_yyyy."-".$target_mm;
+
+
+
+
+// 一番登録が古い年月を取得
+$sql = "SELECT date FROM budget order by date limit 1 ";
 $stmt = $pdo->prepare($sql);
+$stmt->execute();
+$most_oldDate = $stmt->fetch();
+$oldYear = date("Y", strtotime($most_oldDate["date"]));
+$oldMonth = date("m", strtotime($most_oldDate["date"]));
+
+// 変動費の合計
+$sql = "SELECT sum(budget_Amount) FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month ";
+$stmt = $pdo->prepare($sql);
+$stmt->bindValue(":year", $target_yyyy, PDO::PARAM_STR);
+$stmt->bindValue(":month", $target_mm, PDO::PARAM_STR);
 $stmt->execute();
 $variable_total = $stmt->fetch();
 $variable_total = $variable_total["sum(budget_Amount)"];
@@ -21,14 +48,16 @@ $fixed_total = $stmt->fetch();
 $fixed_total = $fixed_total["(DC + NISA + house_cost)"];
 
 
+
 // 各項目毎の合計を出す
-$sql = "SELECT budget_item,sum(budget_Amount) FROM budget GROUP BY budget_item"; // WHERE budget_item =:budget_item
+$sql = "SELECT budget_item,sum(budget_Amount) FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month GROUP BY budget_item "; 
 $stmt = $pdo->prepare($sql);
+$stmt->bindValue(":year", $target_yyyy, PDO::PARAM_STR);
+$stmt->bindValue(":month", $target_mm, PDO::PARAM_STR);
 $stmt->execute();
 $budget_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
 $_SESSION["budget_Amount_sum"] = $budget_list;
 $budget_Amount_sum = $_SESSION["budget_Amount_sum"];
-// var_dump($budget_Amount_sum);
 
 // 【テスト】各項目毎の平均を出す
 // $pdo  = connect_db();
@@ -48,10 +77,6 @@ if (isset($_GET["m"])) {
     $modal_month = date("n", strtotime($yyyymm));
 }
 $day_count = date("t", strtotime($yyyymm));
-
-
-
-
 
 
 // var_dump($budget_list);
@@ -85,22 +110,33 @@ echo "</pre>";
 <body>
     <h1>my money</h1>
     <div class=" float-start px30 pt-3">
-        <form method="POST">
+        <form>
             <div class="d-flex align-items-center">
                 <select class="form-select rounded-pill mb-3 w100px" name="y">
-                    <option value="<?= date("Y") ?>"><?= date("Y") ?></option>
+                    <?php
+                    $thisYear = date("Y");
+                    for ($i = $thisYear; $i >= $oldYear; $i--) :
+                    ?>
+                        <option value="<?= $i ?>" <?php if ($i == $target_yyyy) echo "selected"; ?>><?= $i ?></option>
+                    <?php
+                    endfor;
+                    ?>
                 </select>
+
                 <p class="pl5r10">年</p>
 
                 <select class="form-select rounded-pill mb-3 w80px" name="m">
-                    <option value="<?= date("m") ?>"><?= date("m") ?></option>
-                    <?php for ($i = 1; $i <= $already_month; $i++) : ?>
-                        <?php $target_yyyymm = strtotime("-{$i}months"); ?>
 
-                        <option value="<?= date("m", $target_yyyymm) ?>" <?php if (date("m", $target_yyyymm) == $yyyymm) echo "selected"; ?>><?= date("m", $target_yyyymm) ?></option>
+                    <?php
+                    $thisYear = date("Y");
+                    for ($i = 01; $i <= 12; $i++) :
+                    ?>
+                        <option value="<?= date("m", strtotime($thisYear."-".$i)) ?>" <?php if ($i == $target_mm) echo "selected"; ?>><?= $i ?></option>
                     <?php endfor; ?>
-
                 </select>
+
+
+
                 <p class="pl5r10">月</p>
                 <button class="btn textWhite rounded-pill btnLayout mb-3 bgc_update_btn" type="submit">更新</button>
 
@@ -136,7 +172,7 @@ echo "</pre>";
                         <td>
                             <?php
                             $budget_total = $variable_total + $fixed_total;
-                            $budget_total= intval($budget_total);
+                            $budget_total = intval($budget_total);
                             echo number_format($budget_total) . "円";
                             ?>
                         </td>
