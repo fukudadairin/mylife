@@ -9,7 +9,7 @@ $pdo  = connect_db();
 // 年月セレクトで選択された月を取得、選択されていない状態だと当年当月が選択される
 if (isset($_GET["y"])) {
     $target_yyyy = $_GET["y"];
-}else{
+} else {
     $target_yyyy = date("Y");
 }
 
@@ -18,9 +18,7 @@ if (isset($_GET["m"])) {
 } else {
     $target_mm = date('m');
 }
-$target_yyyymm = $target_yyyy."-".$target_mm;
-
-
+$target_yyyymm = $target_yyyy . "-" . $target_mm;
 
 
 // 一番登録が古い年月を取得
@@ -50,7 +48,7 @@ $fixed_total = $fixed_total["(DC + NISA + house_cost)"];
 
 
 // 各項目毎の合計を出す
-$sql = "SELECT budget_item,sum(budget_Amount) FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month GROUP BY budget_item "; 
+$sql = "SELECT budget_item,sum(budget_Amount) FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month GROUP BY budget_item ";
 $stmt = $pdo->prepare($sql);
 $stmt->bindValue(":year", $target_yyyy, PDO::PARAM_STR);
 $stmt->bindValue(":month", $target_mm, PDO::PARAM_STR);
@@ -68,6 +66,42 @@ $budget_Amount_sum = $_SESSION["budget_Amount_sum"];
 // $budget_Average = $stmt->fetchAll(PDO::FETCH_UNIQUE);
 // var_dump($budget_Average);
 
+// 現金一覧リスト
+$sql = "SELECT id,budget_item,date,budget_detail,budget_Amount,comment FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month AND cash_credit='現金'";
+$stmt = $pdo->prepare($sql);
+$stmt->bindValue(":year", $target_yyyy, PDO::PARAM_STR);
+$stmt->bindValue(":month", $target_mm, PDO::PARAM_STR);
+$stmt->execute();
+$cash_list = $stmt->fetchAll();
+$cash_list_count = count($cash_list);
+
+// 現金の合計
+$sql = "SELECT sum(budget_Amount) FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month AND cash_credit='現金'";
+$stmt = $pdo->prepare($sql);
+$stmt->bindValue(":year", $target_yyyy, PDO::PARAM_STR);
+$stmt->bindValue(":month", $target_mm, PDO::PARAM_STR);
+$stmt->execute();
+$cash_total = $stmt->fetch();
+$cash_total = $cash_total["sum(budget_Amount)"];
+
+// クレジット一覧リスト
+$sql = "SELECT id,budget_item,date,budget_detail,budget_Amount,comment FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month AND cash_credit='クレジット' ";
+$stmt = $pdo->prepare($sql);
+$stmt->bindValue(":year", $target_yyyy, PDO::PARAM_STR);
+$stmt->bindValue(":month", $target_mm, PDO::PARAM_STR);
+$stmt->execute();
+$credit_list = $stmt->fetchAll();
+$credit_list_count = count($credit_list);
+
+// クレジットの合計
+$sql = "SELECT sum(budget_Amount) FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month AND cash_credit='クレジット'";
+$stmt = $pdo->prepare($sql);
+$stmt->bindValue(":year", $target_yyyy, PDO::PARAM_STR);
+$stmt->bindValue(":month", $target_mm, PDO::PARAM_STR);
+$stmt->execute();
+$credit_total = $stmt->fetch();
+$credit_total = $credit_total["sum(budget_Amount)"];
+
 
 if (isset($_GET["m"])) {
     $yyyymm = $_GET["m"];
@@ -77,11 +111,6 @@ if (isset($_GET["m"])) {
     $modal_month = date("n", strtotime($yyyymm));
 }
 $day_count = date("t", strtotime($yyyymm));
-
-
-// var_dump($budget_list);
-// var_dump($_SESSION["budget_list"][6]["budget_Amount"]);
-// var_dump(array_sum($budget_list));
 
 echo "</pre>";
 ?>
@@ -124,24 +153,17 @@ echo "</pre>";
                 </select>
 
                 <p class="pl5r10">年</p>
-
                 <select class="form-select rounded-pill mb-3 w80px" name="m">
-
                     <?php
                     $thisYear = date("Y");
                     for ($i = 01; $i <= 12; $i++) :
                     ?>
-                        <option value="<?= date("m", strtotime($thisYear."-".$i)) ?>" <?php if ($i == $target_mm) echo "selected"; ?>><?= $i ?></option>
+                        <option value="<?= date("m", strtotime($thisYear . "-" . $i)) ?>" <?php if ($i == $target_mm) echo "selected"; ?>><?= $i ?></option>
                     <?php endfor; ?>
                 </select>
-
-
-
                 <p class="pl5r10">月</p>
                 <button class="btn textWhite rounded-pill btnLayout mb-3 bgc_update_btn" type="submit">更新</button>
-
             </div>
-
         </form>
     </div>
     <div class="p30">
@@ -324,7 +346,7 @@ echo "</pre>";
 
     <div class="flex">
         <div class="p30 w50">
-            <div class="t_content_title">クレジット：104400円</div>
+            <div class="t_content_title">クレジット：<?php echo number_format($credit_total) . "円"; ?></div>
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -334,49 +356,57 @@ echo "</pre>";
                         <th scope="col">詳細</th>
                         <th scope="col">金額</th>
                         <th scope="col">メモ</th>
+                        <th scope="col">編集</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>1</td>
+                    <?php for ($i = 0; $i <= $credit_list_count - 1; $i++) : ?>
+                        <?php
+                        $credit_id = "";
+                        $credit_budget_item = "";
+                        $credit_date = "";
+                        $credit_budget_detail = "";
+                        $credit_budget_Amount = "";
+                        $credit_comment = "";
 
-                        <td>接待交際費</td>
-                        <td>2022年07月09日</td>
-                        <td>トウキヨウデンリヨク</td>
+                        
+                        $credit = $credit_list[$i];
+                        if ($credit["id"]) {
+                            $credit_budget_id = $credit["id"];
+                        }
+                        if ($credit["budget_item"]) {
+                            $credit_budget_item = $credit["budget_item"];
+                        }
+                        if ($credit["date"]) {
+                            $credit_date = date("Y/m/d", strtotime($credit["date"]));
+                        }
+                        if ($credit["budget_detail"]) {
+                            $credit_budget_detail = $credit["budget_detail"];
+                        }
+                        if ($credit["budget_Amount"]) {
+                            $credit_budget_Amount = $credit["budget_Amount"];
+                        }
+                        if ($credit["comment"]) {
+                            $credit_comment = $credit["comment"];
+                        } 
+                        ?>
 
-                        <td>3,000</td>
-                        <td>テキストが入るテキストが入るテキストが入る</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>接待交際費</td>
-                        <td>2022年07月09日</td>
-                        <td>トウキヨウデンリヨク</td>
-                        <td>3,000</td>
-                        <td>テキストが入るテキストが入るテキストが入る</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>接待交際費</td>
-                        <td>2022年07月09日</td>
-                        <td>トウキヨウデンリヨク</td>
-                        <td>3,000</td>
-                        <td>テキストが入るテキストが入るテキストが入る</td>
-                    </tr>
-                    <tr>
-                        <td>4</td>
-                        <td>接待交際費</td>
-                        <td>2022年07月09日</td>
-                        <td>トウキヨウデンリヨク</td>
-                        <td>3,000</td>
-                        <td>テキストが入るテキストが入るテキストが入る</td>
-                    </tr>
+                        <tr>
+                            <th class="text-center" scope="row"><?= $i + 1 ?></th>
+                            <td class="text-center"><?= $credit_budget_item ?></td>
+                            <td class="text-center"><?= $credit_date ?></td>
+                            <td class="text-center"><?= $credit_budget_detail ?></td>
+                            <td class="text-center"><?= number_format($credit_budget_Amount) . "円" ?></td>
+                            <td class="with-max px-4"><?= $credit_comment ?></td>
+                            <td><button type="button" class="btn py-0" data-bs-toggle="modal" data-bs-target="#inputModal" data-day="<?= $yyyymm . "-" . $i ?> " data-target_month="<?= $modal_month ?>/">●</button></td>
+                        </tr>
+                    <?php endfor; ?>
                 </tbody>
             </table>
         </div>
 
         <div class="p30 w50">
-            <div class="t_content_title">現金：104400円</div>
+            <div class="t_content_title">現金：<?php echo number_format($cash_total) . "円"; ?></div>
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -386,41 +416,48 @@ echo "</pre>";
                         <th scope="col">詳細</th>
                         <th scope="col">金額</th>
                         <th scope="col">メモ</th>
+                        <th scope="col">編集</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>接待交際費</td>
-                        <td>2022年07月09日</td>
-                        <td>トウキヨウデンリヨク</td>
-                        <td>3,000</td>
-                        <td>テキストが入るテキストが入るテキストが入る</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>接待交際費</td>
-                        <td>2022年07月09日</td>
-                        <td>トウキヨウデンリヨク</td>
-                        <td>3,000</td>
-                        <td>テキストが入るテキストが入るテキストが入る</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>接待交際費</td>
-                        <td>2022年07月09日</td>
-                        <td>トウキヨウデンリヨク</td>
-                        <td>3,000</td>
-                        <td>テキストが入るテキストが入るテキストが入る</td>
-                    </tr>
-                    <tr>
-                        <td>4</td>
-                        <td>接待交際費</td>
-                        <td>2022年07月09日</td>
-                        <td>トウキヨウデンリヨク</td>
-                        <td>3,000</td>
-                        <td>テキストが入るテキストが入るテキストが入る</td>
-                    </tr>
+                    <?php for ($i = 0; $i <= $cash_list_count - 1; $i++) : ?>
+                        <?php
+                        $cash_id = "";
+                        $cash_budget_item = "";
+                        $cash_date = "";
+                        $cash_budget_detail = "";
+                        $cash_budget_Amount = "";
+                        $cash_comment = "";
+
+
+                        $cash = $cash_list[$i];
+                        if ($cash["budget_item"]) {
+                            $cash_budget_item = $cash["budget_item"];
+                        }
+                        if ($cash["date"]) {
+                            $cash_date = date("Y/m/d", strtotime($cash["date"]));
+                        }
+                        if ($cash["budget_detail"]) {
+                            $cash_budget_detail = $cash["budget_detail"];
+                        }
+                        if ($cash["budget_Amount"]) {
+                            $cash_budget_Amount = $cash["budget_Amount"];
+                        }
+                        if ($cash["comment"]) {
+                            $cash_comment = $cash["comment"];
+                        }
+                        ?>
+
+                        <tr>
+                            <th class="text-center" scope="row"><?= $i + 1 ?></th>
+                            <td class="text-center"><?= $cash_budget_item ?></td>
+                            <td class="text-center"><?= $cash_date ?></td>
+                            <td class="text-center"><?= $cash_budget_detail ?></td>
+                            <td class="text-center"><?= number_format($cash_budget_Amount) . "円" ?></td>
+                            <td class="with-max px-4"><?= $cash_comment ?></td>
+                            <td><button type="button" class="btn py-0" data-bs-toggle="modal" data-bs-target="#inputModal" data-day="<?= $yyyymm . "-" . $i ?> " data-target_month="<?= $modal_month ?>/">●</button></td>
+                        </tr>
+                    <?php endfor; ?>
                 </tbody>
             </table>
         </div>
