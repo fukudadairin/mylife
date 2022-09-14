@@ -67,7 +67,7 @@ $budget_Amount_sum = $_SESSION["budget_Amount_sum"];
 // var_dump($budget_Average);
 
 // 現金一覧リスト
-$sql = "SELECT id,budget_item,date,budget_detail,budget_Amount,comment FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month AND cash_credit='現金'";
+$sql = "SELECT id,budget_item,date,budget_detail,budget_Amount,comment FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month AND cash_credit='現金' ORDER BY date ASC";
 $stmt = $pdo->prepare($sql);
 $stmt->bindValue(":year", $target_yyyy, PDO::PARAM_STR);
 $stmt->bindValue(":month", $target_mm, PDO::PARAM_STR);
@@ -85,7 +85,7 @@ $cash_total = $stmt->fetch();
 $cash_total = $cash_total["sum(budget_Amount)"];
 
 // クレジット一覧リスト
-$sql = "SELECT id,budget_item,date,budget_detail,budget_Amount,comment FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month AND cash_credit='クレジット' ";
+$sql = "SELECT id,budget_item,date,budget_detail,budget_Amount,comment FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month AND cash_credit='クレジット'  ORDER BY date ASC";
 $stmt = $pdo->prepare($sql);
 $stmt->bindValue(":year", $target_yyyy, PDO::PARAM_STR);
 $stmt->bindValue(":month", $target_mm, PDO::PARAM_STR);
