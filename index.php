@@ -6,6 +6,7 @@ require_once(dirname(__FILE__) . "/function.php");
 $pdo  = connect_db();
 
 
+
 // 年月セレクトで選択された月を取得、選択されていない状態だと当年当月が選択される
 if (isset($_GET["y"])) {
     $target_yyyy = $_GET["y"];
@@ -19,7 +20,6 @@ if (isset($_GET["m"])) {
     $target_mm = date('m');
 }
 $target_yyyymm = $target_yyyy . "-" . $target_mm;
-
 
 // 一番登録が古い年月を取得
 $sql = "SELECT date FROM budget order by date limit 1 ";
@@ -47,8 +47,8 @@ $fixed_total = $fixed_total["(DC + NISA + house_cost)"];
 
 
 
-// 各項目毎の合計を出す
-$sql = "SELECT budget_item,sum(budget_Amount) FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month GROUP BY budget_item ";
+// 特定月>各項目毎の合計を出す
+$sql = "SELECT budget_item,sum(budget_Amount) FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month GROUP BY budget_item "; 
 $stmt = $pdo->prepare($sql);
 $stmt->bindValue(":year", $target_yyyy, PDO::PARAM_STR);
 $stmt->bindValue(":month", $target_mm, PDO::PARAM_STR);
@@ -57,14 +57,13 @@ $budget_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
 $_SESSION["budget_Amount_sum"] = $budget_list;
 $budget_Amount_sum = $_SESSION["budget_Amount_sum"];
 
-// 【テスト】各項目毎の平均を出す
-// $pdo  = connect_db();
-// $sql = "SELECT budget_item,AVG(budget_Amount) FROM budget WHERE date=:date GROUP BY budget_item";
-// $stmt = $pdo->prepare($sql); //どれを使うのかを決める→SELECT文：INSERT文：UPDATE文：DELETE文：
-// $stmt->bindValue(":date", "2022-01-04", PDO::PARAM_STR);
-// $stmt->execute();
-// $budget_Average = $stmt->fetchAll(PDO::FETCH_UNIQUE);
-// var_dump($budget_Average);
+// 1年間>各項目毎の合計を出す
+$sql = "SELECT budget_item,sum(budget_Amount) FROM budget GROUP BY budget_item "; 
+$stmt = $pdo->prepare($sql);
+$stmt->execute();
+$budget_list_year = $stmt->fetchAll(PDO::FETCH_UNIQUE);
+$_SESSION["budget_Amount_sum_year"] = $budget_list_year;
+$budget_Amount_sum_year = $_SESSION["budget_Amount_sum_year"];
 
 // 現金一覧リスト
 $sql = "SELECT id,budget_item,date,budget_detail,budget_Amount,comment FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month AND cash_credit='現金' ORDER BY date ASC";
@@ -103,14 +102,33 @@ $credit_total = $stmt->fetch();
 $credit_total = $credit_total["sum(budget_Amount)"];
 
 
-if (isset($_GET["m"])) {
-    $yyyymm = $_GET["m"];
-    $modal_month = date("n", strtotime($yyyymm));
-} else {
-    $yyyymm = date('Y-m');
-    $modal_month = date("n", strtotime($yyyymm));
-}
-$day_count = date("t", strtotime($yyyymm));
+
+// 年別の月カウント
+$sql = "SELECT DATE_FORMAT(date, '%Y-%m') as `grouping_column` FROM budget WHERE YEAR(date) = :year GROUP BY grouping_column";
+$stmt = $pdo->prepare($sql);
+$stmt->bindValue(":year", $target_yyyy, PDO::PARAM_STR);
+$stmt->execute();
+$month_count = $stmt->fetchAll(PDO::FETCH_UNIQUE);
+$month_count = count($month_count);
+// 各項目毎の平均を出す
+$sql = "SELECT budget_item,round(avg(budget_Amount)) FROM budget  WHERE YEAR(date) = :year AND MONTH(date) = :month GROUP BY budget_item "; 
+$stmt = $pdo->prepare($sql);
+$stmt->bindValue(":year", $target_yyyy, PDO::PARAM_STR);
+$stmt->bindValue(":month", $target_mm, PDO::PARAM_STR);
+$stmt->execute();
+$budget_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
+$_SESSION["budget_Amount_avg"] = $budget_list;
+$budget_Amount_avg = $_SESSION["budget_Amount_avg"];
+
+// 年別の日カウント
+for ($a = 1; $a <= $month_count; $a++) :    
+    $day_count="";
+    $day_count = date("t", strtotime($target_yyyy."-".$a));
+    $day_count_list[] = $day_count;    
+endfor;
+
+$day_count_total=array_sum($day_count_list);
+$avg_variable = $day_count_total/$month_count;
 
 echo "</pre>";
 ?>
@@ -212,94 +230,132 @@ echo "</pre>";
                         </td>
                         <td>
                             <?php
-                            $Amount_syokuhi = $budget_Amount_sum["食費"]["sum(budget_Amount)"];
-                            // $Amount_syokuhi = intval($budget_Amount_sum["食費"]["sum(budget_Amount)"]);
-                            echo number_format($Amount_syokuhi) . "円";
+                            $sum_syokuhi = $budget_Amount_sum["食費"]["sum(budget_Amount)"];
+                            echo number_format($sum_syokuhi) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $Amount_ryohikoutuhi = $budget_Amount_sum["旅費交通費"]["sum(budget_Amount)"];
-                            // $Amount_ryohikoutuhi = intval($budget_Amount_sum["食費"]["sum(budget_Amount)"]);
-                            echo number_format($Amount_ryohikoutuhi) . "円";
+                            $sum_ryohikoutuhi = $budget_Amount_sum["旅費交通費"]["sum(budget_Amount)"];
+                            echo number_format($sum_ryohikoutuhi) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $Amount_suidougasu = $budget_Amount_sum["水道・ガス・光熱費"]["sum(budget_Amount)"];
-                            // $Amount_suidougasu = intval($budget_Amount_sum["食費"]["sum(budget_Amount)"]);
-                            echo number_format($Amount_suidougasu) . "円";
+                            $sum_suidougasu = $budget_Amount_sum["水道・ガス・光熱費"]["sum(budget_Amount)"];
+                            echo number_format($sum_suidougasu) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $Amount_syoumouhin = $budget_Amount_sum["消耗品"]["sum(budget_Amount)"];
-                            // $Amount_syoumouhin = intval($budget_Amount_sum["食費"]["sum(budget_Amount)"]);
-                            echo number_format($Amount_syoumouhin) . "円";
+                            $sum_syoumouhin = $budget_Amount_sum["消耗品"]["sum(budget_Amount)"];
+                            echo number_format($sum_syoumouhin) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $Amount_tusinhi = $budget_Amount_sum["通信費"]["sum(budget_Amount)"];
-                            // $Amount_tusinhi = intval($budget_Amount_sum["食費"]["sum(budget_Amount)"]);
-                            echo number_format($Amount_tusinhi) . "円";
+                            $sum_tusinhi = $budget_Amount_sum["通信費"]["sum(budget_Amount)"];
+                            echo number_format($sum_tusinhi) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $Amount_kensyuuhi = $budget_Amount_sum["研修費"]["sum(budget_Amount)"];
-                            // $Amount_kensyuuhi = intval($budget_Amount_sum["食費"]["sum(budget_Amount)"]);
-                            echo number_format($Amount_kensyuuhi) . "円";
+                            $sum_kensyuuhi = $budget_Amount_sum["研修費"]["sum(budget_Amount)"];
+                            echo number_format($sum_kensyuuhi) . "円";
                             ?>
                         </td>
 
                         <td>
                             <?php
-                            $Amount_kousaihi = $budget_Amount_sum["接待交際費"]["sum(budget_Amount)"];
-                            // $Amount_kousaihi = intval($budget_Amount_sum["食費"]["sum(budget_Amount)"]);
-                            echo number_format($Amount_kousaihi) . "円";
+                            $sum_kousaihi = $budget_Amount_sum["接待交際費"]["sum(budget_Amount)"];
+                            echo number_format($sum_kousaihi) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $Amount_iryouhi = $budget_Amount_sum["医療費"]["sum(budget_Amount)"];
-                            // $Amount_iryouhi = intval($budget_Amount_sum["食費"]["sum(budget_Amount)"]);
-                            echo number_format($Amount_iryouhi) . "円";
+                            $sum_iryouhi = $budget_Amount_sum["医療費"]["sum(budget_Amount)"];
+                            echo number_format($sum_iryouhi) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $Amount_setuzei = $budget_Amount_sum["節税関係"]["sum(budget_Amount)"];
-                            // $Amount_setuzei = intval($budget_Amount_sum["食費"]["sum(budget_Amount)"]);
-                            echo number_format($Amount_setuzei) . "円";
+                            $sum_setuzei = $budget_Amount_sum["節税関係"]["sum(budget_Amount)"];
+                            echo number_format($sum_setuzei) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $Amount_hensai = $budget_Amount_sum["返済"]["sum(budget_Amount)"];
-                            // $Amount_hensai = intval($budget_Amount_sum["食費"]["sum(budget_Amount)"]);
-                            echo number_format($Amount_hensai) . "円";
+                            $sum_hensai = $budget_Amount_sum["返済"]["sum(budget_Amount)"];
+                            echo number_format($sum_hensai) . "円";
                             ?>
                         </td>
-                        <?php
-
-                        ?>
                     </tr>
                     <tr>
                         <th scope="row">平均</th>
-                        <td></td>
+                        <td>---</td>
                         <td>1,000</td>
-                        <td>4,000</td>
-                        <td>6,000</td>
-                        <td>1,000</td>
-                        <td>4,000</td>
-                        <td>6,000</td>
-                        <td>1,000</td>
-                        <td>4,000</td>
-                        <td>6,000</td>
-                        <td>1,000</td>
-                        <td>4,000</td>
-                        <td>6,000</td>
+                        <td>---</td>
+                        <td>
+                            <?php
+                            $avg_syokuhi = $budget_Amount_sum_year["食費"]["sum(budget_Amount)"]/($month_count-1);
+                            echo number_format($avg_syokuhi) . "円";
+                            ?>
+                        </td>
+                        <td>
+                            <?php
+                            $avg_ryohikoutuhi = $budget_Amount_sum_year["旅費交通費"]["sum(budget_Amount)"]/($month_count-1);
+                            echo number_format($avg_ryohikoutuhi) . "円";
+                            ?>
+                        </td>
+                        <td>
+                            <?php
+                            $avg_suidougasu = $budget_Amount_sum_year["水道・ガス・光熱費"]["sum(budget_Amount)"]/($month_count-1);
+                            echo number_format($avg_suidougasu) . "円";
+                            ?>
+                        </td>
+                        <td>
+                            <?php
+                            $avg_syoumouhin = $budget_Amount_sum_year["消耗品"]["sum(budget_Amount)"]/($month_count-1);
+                            echo number_format($avg_syoumouhin) . "円";
+                            ?>
+                        </td>
+                        <td>
+                            <?php
+                            $avg_tusinhi = $budget_Amount_sum_year["通信費"]["sum(budget_Amount)"]/($month_count-1);
+                            echo number_format($avg_tusinhi) . "円";
+                            ?>
+                        </td>
+                        <td>
+                            <?php
+                            $avg_kensyuuhi = $budget_Amount_sum_year["研修費"]["sum(budget_Amount)"]/($month_count-1);
+                            echo number_format($avg_kensyuuhi) . "円";
+                            ?>
+                        </td>
+
+                        <td>
+                            <?php
+                            $avg_kousaihi = $budget_Amount_sum_year["接待交際費"]["sum(budget_Amount)"]/($month_count-1);
+                            echo number_format($avg_kousaihi) . "円";
+                            ?>
+                        </td>
+                        <td>
+                            <?php
+                            $avg_iryouhi = $budget_Amount_sum_year["医療費"]["sum(budget_Amount)"]/($month_count-1);
+                            echo number_format($avg_iryouhi) . "円";
+                            ?>
+                        </td>
+                        <td>
+                            <?php
+                            $avg_setuzei = $budget_Amount_sum_year["節税関係"]["sum(budget_Amount)"]/($month_count-1);
+                            echo number_format($avg_setuzei) . "円";
+                            ?>
+                        </td>
+                        <td>
+                            <?php
+                            $avg_hensai = $budget_Amount_sum_year["返済"]["sum(budget_Amount)"]/($month_count-1);
+                            echo number_format($avg_hensai) . "円";
+                            ?>
+                        </td>
                     </tr>
                     <tr>
                         <th scope="row">目標</th>
