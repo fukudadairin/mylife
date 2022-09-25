@@ -8,18 +8,55 @@ $pdo  = connect_db();
 
 
 // 年月セレクトで選択された月を取得、選択されていない状態だと当年当月が選択される
-if (isset($_GET["y"])) {
-    $target_yyyy = $_GET["y"];
+if (isset($_POST["y"])) {
+    $_SESSION["target_yyyy"] = $_POST["y"];
+    $target_yyyy = $_SESSION["target_yyyy"];
 } else {
-    $target_yyyy = date("Y");
+    $_SESSION["target_yyyy"] = date("Y");
+    $target_yyyy = $_SESSION["target_yyyy"];
 }
 
-if (isset($_GET["m"])) {
-    $target_mm = $_GET["m"];
+if (isset($_POST["m"])) {
+    $_SESSION["target_mm"] = $_POST["m"];
+    $target_mm = $_SESSION["target_mm"];
 } else {
-    $target_mm = date('m');
+    $_SESSION["target_mm"] = date('m');
+    $target_mm = $_SESSION["target_mm"];
 }
-$target_yyyymm = $target_yyyy . "-" . $target_mm;
+$_SESSION["target_yyyymm"] = $target_yyyy . "-" . $target_mm;
+$target_yyyymm = $_SESSION["target_yyyymm"];
+var_dump($target_yyyymm);
+var_dump($target_budget_total);
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+
+    $_SESSION["target_budget_total"] = $_POST["target_budget_total"];
+    $target_budget_total = $_SESSION["target_budget_total"];
+    $_SESSION["target_variable_total"] = $_POST["target_variable_total"];
+    $target_variable_total = $_SESSION["target_variable_total"];
+    $_SESSION["target_fixed_total"] = $_POST["target_fixed_total"];
+    $target_fixed_total = $_SESSION["target_fixed_total"];
+    $_SESSION["target_syokuhi"] = $_POST["target_syokuhi"];
+    $target_syokuhi = $_SESSION["target_syokuhi"];
+    $_SESSION["target_ryohikoutuhi"] = $_POST["target_ryohikoutuhi"];
+    $target_ryohikoutuhi = $_SESSION["target_ryohikoutuhi"];
+    $_SESSION["target_suidougasu"] = $_POST["target_suidougasu"];
+    $target_suidougasu = $_SESSION["target_suidougasu"];
+    $_SESSION["target_syoumouhin"] = $_POST["target_syoumouhin"];
+    $target_syoumouhin = $_SESSION["target_syoumouhin"];
+    $_SESSION["target_tusinhi"] = $_POST["target_tusinhi"];
+    $target_tusinhi = $_SESSION["target_tusinhi"];
+    $_SESSION["target_kensyuuhi"] = $_POST["target_kensyuuhi"];
+    $target_kensyuuhi = $_SESSION["target_kensyuuhi"];
+    $_SESSION["target_kousaihi"] = $_POST["target_kousaihi"];
+    $target_kousaihi = $_SESSION["target_kousaihi"];
+    $_SESSION["target_iryouhi"] = $_POST["target_iryouhi"];
+    $target_iryouhi = $_SESSION["target_iryouhi"];
+    $_SESSION["target_setuzei"] = $_POST["target_setuzei"];
+    $target_setuzei = $_SESSION["target_setuzei"];
+    $_SESSION["target_hensai"] = $_POST["target_hensai"];
+    $target_hensai = $_SESSION["target_hensai"];
+}
 
 // 一番登録が古い年月を取得
 $sql = "SELECT date FROM budget order by date limit 1 ";
@@ -48,7 +85,7 @@ $fixed_total = $fixed_total["(DC + NISA + house_cost)"];
 
 
 // 特定月>各項目毎の合計を出す
-$sql = "SELECT budget_item,sum(budget_Amount) FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month GROUP BY budget_item "; 
+$sql = "SELECT budget_item,sum(budget_Amount) FROM budget WHERE YEAR(date) = :year AND MONTH(date) = :month GROUP BY budget_item ";
 $stmt = $pdo->prepare($sql);
 $stmt->bindValue(":year", $target_yyyy, PDO::PARAM_STR);
 $stmt->bindValue(":month", $target_mm, PDO::PARAM_STR);
@@ -58,7 +95,7 @@ $_SESSION["budget_Amount_sum"] = $budget_list;
 $budget_Amount_sum = $_SESSION["budget_Amount_sum"];
 
 // 1年間>各項目毎の合計を出す
-$sql = "SELECT budget_item,sum(budget_Amount) FROM budget GROUP BY budget_item "; 
+$sql = "SELECT budget_item,sum(budget_Amount) FROM budget GROUP BY budget_item ";
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $budget_list_year = $stmt->fetchAll(PDO::FETCH_UNIQUE);
@@ -111,7 +148,7 @@ $stmt->execute();
 $month_count = $stmt->fetchAll(PDO::FETCH_UNIQUE);
 $month_count = count($month_count);
 // 各項目毎の平均を出す
-$sql = "SELECT budget_item,round(avg(budget_Amount)) FROM budget  WHERE YEAR(date) = :year AND MONTH(date) = :month GROUP BY budget_item "; 
+$sql = "SELECT budget_item,round(avg(budget_Amount)) FROM budget  WHERE YEAR(date) = :year AND MONTH(date) = :month GROUP BY budget_item ";
 $stmt = $pdo->prepare($sql);
 $stmt->bindValue(":year", $target_yyyy, PDO::PARAM_STR);
 $stmt->bindValue(":month", $target_mm, PDO::PARAM_STR);
@@ -121,14 +158,14 @@ $_SESSION["budget_Amount_avg"] = $budget_list;
 $budget_Amount_avg = $_SESSION["budget_Amount_avg"];
 
 // 年別の日カウント
-for ($a = 1; $a <= $month_count; $a++) :    
-    $day_count="";
-    $day_count = date("t", strtotime($target_yyyy."-".$a));
-    $day_count_list[] = $day_count;    
+for ($a = 1; $a <= $month_count; $a++) :
+    $day_count = "";
+    $day_count = date("t", strtotime($target_yyyy . "-" . $a));
+    $day_count_list[] = $day_count;
 endfor;
 
-$day_count_total=array_sum($day_count_list);
-$avg_variable = $day_count_total/$month_count;
+$day_count_total = array_sum($day_count_list);
+$avg_variable = $day_count_total / $month_count;
 
 echo "</pre>";
 ?>
@@ -157,7 +194,7 @@ echo "</pre>";
 <body>
     <h1>my money</h1>
     <div class=" float-start px30 pt-3">
-        <form>
+        <form method="POST">
             <div class="d-flex align-items-center">
                 <select class="form-select rounded-pill mb-3 w100px" name="y">
                     <?php
@@ -297,81 +334,107 @@ echo "</pre>";
                         <td>---</td>
                         <td>
                             <?php
-                            $avg_syokuhi = $budget_Amount_sum_year["食費"]["sum(budget_Amount)"]/($month_count-1);
+                            $avg_syokuhi = $budget_Amount_sum_year["食費"]["sum(budget_Amount)"] / ($month_count - 1);
                             echo number_format($avg_syokuhi) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $avg_ryohikoutuhi = $budget_Amount_sum_year["旅費交通費"]["sum(budget_Amount)"]/($month_count-1);
+                            $avg_ryohikoutuhi = $budget_Amount_sum_year["旅費交通費"]["sum(budget_Amount)"] / ($month_count - 1);
                             echo number_format($avg_ryohikoutuhi) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $avg_suidougasu = $budget_Amount_sum_year["水道・ガス・光熱費"]["sum(budget_Amount)"]/($month_count-1);
+                            $avg_suidougasu = $budget_Amount_sum_year["水道・ガス・光熱費"]["sum(budget_Amount)"] / ($month_count - 1);
                             echo number_format($avg_suidougasu) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $avg_syoumouhin = $budget_Amount_sum_year["消耗品"]["sum(budget_Amount)"]/($month_count-1);
+                            $avg_syoumouhin = $budget_Amount_sum_year["消耗品"]["sum(budget_Amount)"] / ($month_count - 1);
                             echo number_format($avg_syoumouhin) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $avg_tusinhi = $budget_Amount_sum_year["通信費"]["sum(budget_Amount)"]/($month_count-1);
+                            $avg_tusinhi = $budget_Amount_sum_year["通信費"]["sum(budget_Amount)"] / ($month_count - 1);
                             echo number_format($avg_tusinhi) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $avg_kensyuuhi = $budget_Amount_sum_year["研修費"]["sum(budget_Amount)"]/($month_count-1);
+                            $avg_kensyuuhi = $budget_Amount_sum_year["研修費"]["sum(budget_Amount)"] / ($month_count - 1);
                             echo number_format($avg_kensyuuhi) . "円";
                             ?>
                         </td>
 
                         <td>
                             <?php
-                            $avg_kousaihi = $budget_Amount_sum_year["接待交際費"]["sum(budget_Amount)"]/($month_count-1);
+                            $avg_kousaihi = $budget_Amount_sum_year["接待交際費"]["sum(budget_Amount)"] / ($month_count - 1);
                             echo number_format($avg_kousaihi) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $avg_iryouhi = $budget_Amount_sum_year["医療費"]["sum(budget_Amount)"]/($month_count-1);
+                            $avg_iryouhi = $budget_Amount_sum_year["医療費"]["sum(budget_Amount)"] / ($month_count - 1);
                             echo number_format($avg_iryouhi) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $avg_setuzei = $budget_Amount_sum_year["節税関係"]["sum(budget_Amount)"]/($month_count-1);
+                            $avg_setuzei = $budget_Amount_sum_year["節税関係"]["sum(budget_Amount)"] / ($month_count - 1);
                             echo number_format($avg_setuzei) . "円";
                             ?>
                         </td>
                         <td>
                             <?php
-                            $avg_hensai = $budget_Amount_sum_year["返済"]["sum(budget_Amount)"]/($month_count-1);
+                            $avg_hensai = $budget_Amount_sum_year["返済"]["sum(budget_Amount)"] / ($month_count - 1);
                             echo number_format($avg_hensai) . "円";
                             ?>
                         </td>
                     </tr>
                     <tr>
                         <th scope="row">目標</th>
-                        <td><input class="w100" type="text"> </td>
-                        <td><input class="w100" type="text"> </td>
-                        <td><input class="w100" type="text"></td>
-                        <td><input class="w100" type="text"></td>
-                        <td><input class="w100" type="text"></td>
-                        <td><input class="w100" type="text"></td>
-                        <td><input class="w100" type="text"></td>
-                        <td><input class="w100" type="text"></td>
-                        <td><input class="w100" type="text"></td>
-                        <td><input class="w100" type="text"></td>
-                        <td><input class="w100" type="text"></td>
-                        <td><input class="w100" type="text"></td>
-                        <td><input class="w100" type="text"></td>
+                        <td><input class="w100" type="text" name="target_budget_total" value="<?php if ($target_budget_total) {
+                                                                                                    echo number_format($target_budget_total) . "円";
+                                                                                                } ?>"></td>
+                        <td><input class="w100" type="text" name="target_variable_total" value="<?php if ($target_variable_total) {
+                                                                                                    echo number_format($target_variable_total) . "円";
+                                                                                                } ?>"></td>
+                        <td><input class="w100" type="text" name="target_fixed_total" value="<?php if ($target_fixed_total) {
+                                                                                                    echo number_format($target_fixed_total) . "円";
+                                                                                                } ?>"></td>
+                        <td><input class="w100" type="text" name="target_syokuhi" value="<?php if ($target_syokuhi) {
+                                                                                                echo number_format($target_syokuhi) . "円";
+                                                                                            } ?>"></td>
+                        <td><input class="w100" type="text" name="target_ryohikoutuhi" value="<?php if ($target_ryohikoutuhi) {
+                                                                                                    echo number_format($target_ryohikoutuhi) . "円";
+                                                                                                } ?>"></td>
+                        <td><input class="w100" type="text" name="target_suidougasu" value="<?php if ($target_suidougasu) {
+                                                                                                echo number_format($target_suidougasu) . "円";
+                                                                                            } ?>"></td>
+                        <td><input class="w100" type="text" name="target_syoumouhin" value="<?php if ($target_syoumouhin) {
+                                                                                                echo number_format($target_syoumouhin) . "円";
+                                                                                            } ?>"></td>
+                        <td><input class="w100" type="text" name="target_tusinhi" value="<?php if ($target_tusinhi) {
+                                                                                                echo number_format($target_tusinhi) . "円";
+                                                                                            } ?>"></td>
+                        <td><input class="w100" type="text" name="target_kensyuuhi" value="<?php if ($target_kensyuuhi) {
+                                                                                                echo number_format($target_kensyuuhi) . "円";
+                                                                                            } ?>"></td>
+                        <td><input class="w100" type="text" name="target_kousaihi" value="<?php if ($target_kousaihi) {
+                                                                                                echo number_format($target_kousaihi) . "円";
+                                                                                            } ?>"></td>
+                        <td><input class="w100" type="text" name="target_iryouhi" value="<?php if ($target_iryouhi) {
+                                                                                                echo number_format($target_iryouhi) . "円";
+                                                                                            } ?>"></td>
+                        <td><input class="w100" type="text" name="target_setuzei" value="<?php if ($target_setuzei) {
+                                                                                                echo number_format($target_setuzei) . "円";
+                                                                                            } ?>"></td>
+                        <td><input class="w100" type="text" name="target_hensai" value="<?php if ($target_hensai) {
+                                                                                            echo number_format($target_hensai) . "円";
+                                                                                        } ?>"></td>
                     </tr>
                     <tr>
                         <th scope="row">先月比</th>
@@ -425,7 +488,7 @@ echo "</pre>";
                         $credit_budget_Amount = "";
                         $credit_comment = "";
 
-                        
+
                         $credit = $credit_list[$i];
                         if ($credit["id"]) {
                             $credit_budget_id = $credit["id"];
@@ -444,7 +507,7 @@ echo "</pre>";
                         }
                         if ($credit["comment"]) {
                             $credit_comment = $credit["comment"];
-                        } 
+                        }
                         ?>
 
                         <tr>
