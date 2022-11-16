@@ -25,8 +25,6 @@ if (isset($_POST["m"])) {
 }
 $_SESSION["target_yyyymm"] = $target_yyyy . "-" . $target_mm;
 $target_yyyymm = $_SESSION["target_yyyymm"];
-var_dump($target_yyyymm);
-var_dump($target_budget_total);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
@@ -166,6 +164,9 @@ endfor;
 
 $day_count_total = array_sum($day_count_list);
 $avg_variable = $day_count_total / $month_count;
+
+// var_dump($budget_Amount_sum);
+
 
 echo "</pre>";
 ?>

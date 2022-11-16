@@ -3,4 +3,4 @@
     $_SESSION=array();
     session_destroy();
 
-    header("Location:/my_life");
+    header("Location:/");
